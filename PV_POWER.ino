@@ -1,8 +1,3 @@
-
-
-
-
-
 #include <U8glib.h>
 
 #define Prad A2
@@ -11,6 +6,8 @@
 
 #define OLED_SCL A5
 #define OLED_SDA A4
+
+#define alertPin 10  //has PWM!
 
 float moc;
 float energia;
@@ -43,6 +40,9 @@ int numCheck = 1000;
 unsigned long uCtime;
 byte previous = 0;
 long initTime;
+float switchVoltage = 12; //if battery voltage drop below this value it starts blinking diode! 
+float minVoltage = 10.5; //min battery voltage from safety reason, this value must be lower than switchVoltage!
+byte val; //temporary alert value for analogwrite
 U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_NONE);
 
 void setup() {
@@ -56,6 +56,8 @@ void setup() {
   pinMode(13, OUTPUT);
   pinMode(OLED_SCL, OUTPUT);
   pinMode(OLED_SDA, OUTPUT);
+
+  pinMode(alertPin, OUTPUT);
 
   //if (u8g.getMode()==U8G_MODE_R3G3B2){u8g.setColorIndex(255);}
   //else if (u8g.getMode()== U8G_MODE_GRAY2BIT) { u8g.setColorIndex(3);}
@@ -131,6 +133,7 @@ void timer ()
   
   if (previous!=uCtime) {
     previous = uCtime;
+    alert();
     czasPracySec = (czasPracySec + 1) % 60;
     if (!czasPracySec) {
       //    czasPracyMin = (int)((uCtime / 60000) % 60); // ms ->s 1000 // s -> min 60
@@ -153,15 +156,17 @@ void timer ()
 //  Serial.print("   czasPracySec: ");
 //  Serial.println(czasPracySec);
 
+}
 
-
+//if voltage is too low -> uC gives signals!
+void alert(){
+  if(VBat<switchVoltage){
+    val = (abs(VBat - switchVoltage)/(switchVoltage-minVoltage))*255;
+    analogWrite(alertPin,val);
+  }
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  //  u8g.firstPage();
-  //4 290 320 = 11.8sek
-  //42 903 200 = 121sek
   if (i < numCheck)
   { i++;
     tmpInIBat = analogRead(Prad);
@@ -173,13 +178,6 @@ void loop() {
     //tmpInVKol = analogRead (NapiecieKol);
     //InVKol += tmpInVKol;
 
-    //u8g.firstPage();
-    //do
-    //{u8g.drawStr (10,10, " LICZE");
-    //}
-    //while (u8g.nextPage());
-
-
   }
   else {
     i = 0;
@@ -187,11 +185,6 @@ void loop() {
     InIBat = InIBat / numCheck; // i = max (100);
     InVBat = InVBat / numCheck;
     //  InVKol = InVKol/100;
-    //    InIBat = tmpInIBat/100;
-    //    InVBat = tmpInVBat/100;
-    //    InVKol = tmpInVKol/100;
-
-
 
     IBat = (0.048828125 * InIBat) - 25 + 0.07; //5/1024/0.1 Sensivity = 0.1V/A 2.5/0.1 = 25
     //                                          //0.07 błąd pomiaru!
@@ -212,7 +205,7 @@ void loop() {
     //    Serial.println(czasPracySec);
 
     timer();
-
+    
     u8g.firstPage();
 
     do
@@ -226,11 +219,7 @@ void loop() {
     InVBat = 0;
     //  InVKol = 0;
 
-
-
     // Serial.println(czas);
-
-
     //  Serial.println(energia,10);
     //  Serial.println(moc);
     //  Serial.println(czas);
