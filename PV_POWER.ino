@@ -41,14 +41,14 @@ byte timerCol = 26;
 
 int numCheck = 1000;
 unsigned long uCtime;
-boolean previous = false;
+byte previous = 0;
 long initTime;
 U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_NONE);
 
 void setup() {
   // put your setup code here, to run once:
 
-  Serial.begin(115200);
+//  Serial.begin(115200);
 
   pinMode (Prad, INPUT);
   pinMode (NapiecieBat, INPUT);
@@ -128,9 +128,9 @@ void timer ()
   uCtime = millis();
 
   uCtime = ((int)(uCtime / 1000)) % 2; //ms->s
-
-  if (uCtime && previous == false) {
-    previous = true;
+  
+  if (previous!=uCtime) {
+    previous = uCtime;
     czasPracySec = (czasPracySec + 1) % 60;
     if (!czasPracySec) {
       //    czasPracyMin = (int)((uCtime / 60000) % 60); // ms ->s 1000 // s -> min 60
@@ -144,15 +144,15 @@ void timer ()
         }
       }
     }
-  } else if(!uCtime && previous==true){
-    previous = false;
-  }
-  Serial.print("previous: ");
-  Serial.print(previous);
-  Serial.print("   uCtime: ");
-  Serial.print(uCtime);
-  Serial.print("   czasPracySec: ");
-  Serial.println(czasPracySec);
+  } 
+  
+//  Serial.print("previous: ");
+//  Serial.print(previous);
+//  Serial.print("   uCtime: ");
+//  Serial.print(uCtime);
+//  Serial.print("   czasPracySec: ");
+//  Serial.println(czasPracySec);
+
 
 
 }
