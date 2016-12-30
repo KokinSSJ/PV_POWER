@@ -29,10 +29,11 @@ int tmpInVBat;
 
 //float czasPracyWMin; // czas pracy wyrażony w minutach
 // MAX wartość czasu 49dni 17h
-float czasPracyMin;  //czas pracy sterownika część: minut
-float czasPracyGodz; //czas pracy sterownika część: godzin
-float czasPracyDni;   //czas pracy sterownika część: dni
-float czasPracySec; //czas pracy sterownika część: sekundy
+byte czasPracyMin;  //czas pracy sterownika część: minut
+byte czasPracyGodz; //czas pracy sterownika część: godzin
+int czasPracyDni;   //czas pracy sterownika część: dni
+byte czasPracySec; //czas pracy sterownika część: sekundy
+
 unsigned long czas;
 unsigned long i = 0;
 byte timerRow = 10;
@@ -40,7 +41,7 @@ byte timerCol = 26;
 
 int numCheck = 1000;
 unsigned long uCtime;
-
+boolean previous = false;
 long initTime;
 U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_NONE);
 
@@ -80,17 +81,17 @@ void drawOLED ()
   //u8g.setFont(u8g_font_6x12);
   //dni
   u8g.setPrintPos(timerCol + 6, timerRow);
-  u8g.print(czasPracyDni, 0);
+  u8g.print(czasPracyDni);
   u8g.drawStr(timerCol + 18, timerRow, "d ");
 
   //godziny
   u8g.setPrintPos(timerCol + 30, timerRow);
-  u8g.print(czasPracyGodz, 0);
+  u8g.print(czasPracyGodz);
   u8g.drawStr(timerCol + 42, timerRow, "g ");
 
   //minuty
   u8g.setPrintPos(timerCol + 54, timerRow);
-  u8g.print(czasPracyMin, 0);
+  u8g.print(czasPracyMin);
   u8g.drawStr(timerCol + 66, timerRow, "m ");
 
   //sekundy
@@ -98,7 +99,7 @@ void drawOLED ()
   // u8g.setFont(u8g_font_osb18);
 
   u8g.setPrintPos(timerCol + 78, timerRow);
-  u8g.print(czasPracySec, 0);
+  u8g.print(czasPracySec);
   //   u8g.setFont(u8g_font_10x20);
   u8g.drawStr(timerCol + 90, timerRow, "s");
 
@@ -126,18 +127,33 @@ void timer ()
   //czasPracyWMin = millis()/60000;
   uCtime = millis();
 
-  czasPracySec = ((int)(uCtime / 1000)) % 60; //ms->s
-  if (!czasPracySec) {
-    czasPracyMin = (int)((uCtime / 60000) % 60); // ms ->s 1000 // s -> min 60
-    if (!czasPracyMin) {
-      czasPracyGodz = (int)(uCtime / 3600000) % 24; //ms ->s 1000 //s->min 60 // min ->godz 60
-      if (!czasPracyGodz) {
-        czasPracyDni = ((int)(uCtime / 86400000)); // ms->s 1000 //s->min 60 // min->godz 60 // godz->dni 24
+  uCtime = ((int)(uCtime / 1000)) % 2; //ms->s
+
+  if (uCtime && previous == false) {
+    previous = true;
+    czasPracySec = (czasPracySec + 1) % 60;
+    if (!czasPracySec) {
+      //    czasPracyMin = (int)((uCtime / 60000) % 60); // ms ->s 1000 // s -> min 60
+      czasPracyMin = (czasPracyMin + 1) % 60;
+      if (!czasPracyMin) {
+        //      czasPracyGodz = (int)(uCtime / 3600000) % 24; //ms ->s 1000 //s->min 60 // min ->godz 60
+        czasPracyGodz =(czasPracyGodz+1)%24;
+        if (!czasPracyGodz) {
+          //        czasPracyDni = ((int)(uCtime / 86400000)); // ms->s 1000 //s->min 60 // min->godz 60 // godz->dni 24
+          czasPracyDni++;
+        }
       }
-
     }
-
+  } else if(!uCtime && previous==true){
+    previous = false;
   }
+  Serial.print("previous: ");
+  Serial.print(previous);
+  Serial.print("   uCtime: ");
+  Serial.print(uCtime);
+  Serial.print("   czasPracySec: ");
+  Serial.println(czasPracySec);
+
 
 }
 
@@ -183,20 +199,20 @@ void loop() {
     ////VKol = InVKol * 0.0146484375;//(5/1024)*(990Ohm/330Ohm); 990 Ohm = 330+330+330
     ////VKol = InVKol *0.0048828125 ;
     moc = VBat * IBat;
-//    Serial.print("moc: ");
-//    Serial.println(moc);
-    
+    //    Serial.print("moc: ");
+    //    Serial.println(moc);
+
     czas = millis() - czas;
-//    Serial.print("czas: ");
-//    Serial.println(czas);
+    //    Serial.print("czas: ");
+    //    Serial.println(czas);
     energia += ((moc * czas) / 3600000000); //3600 - sek na h, 1000 bo kilo(waty), 1000 ms to s
-czas = millis();
-//    Serial.print("energia: ");
-//    Serial.println(energia,8);
-//    Serial.println(czasPracySec);
-    
+    czas = millis();
+    //    Serial.print("energia: ");
+    //    Serial.println(energia,8);
+    //    Serial.println(czasPracySec);
+
     timer();
-    
+
     u8g.firstPage();
 
     do
@@ -221,7 +237,7 @@ czas = millis();
     //  Serial.println(czasPracyMin);
     //    Serial.println (" ");
 
-      
+
     if (!digitalRead(13)) {
       digitalWrite(13, 1);
     }
