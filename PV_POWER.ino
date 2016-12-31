@@ -32,14 +32,16 @@ int czasPracyDni;   //czas pracy sterownika część: dni
 byte czasPracySec; //czas pracy sterownika część: sekundy
 
 unsigned long czas;
-unsigned long i = 0;
+unsigned long previousCzas;
+
+int i = 0;
 byte timerRow = 10;
 byte timerCol = 26;
 
 int numCheck = 1000;
 unsigned long uCtime;
 byte previous = 0;
-long initTime;
+
 float switchVoltage = 12; //if battery voltage drop below this value it starts blinking diode! 
 float minVoltage = 10.5; //min battery voltage from safety reason, this value must be lower than switchVoltage!
 byte val; //temporary alert value for analogwrite
@@ -127,18 +129,23 @@ void timer ()
 {
   // sprawdzić czy może nie dać czasów w unsigned long + rzutowanie po obliczeniu dzielenia na intiger
   //czasPracyWMin = millis()/60000;
-  uCtime = millis();
+//  uCtime = millis();
 
-  uCtime = ((int)(uCtime / 1000)) % 2; //ms->s
-  
+  uCtime = ((unsigned long)(millis() / 1000)); //ms->s
+//  Serial.print("uCtime: ");
+//  Serial.println(uCtime);
+  uCtime = uCtime%2;
+//  Serial.print("uCtime 2: ");
+//  Serial.println(uCtime);
   if (previous!=uCtime) {
     previous = uCtime;
-    alert();
+    
     czasPracySec = (czasPracySec + 1) % 60;
     if (!czasPracySec) {
+      alert();
       //    czasPracyMin = (int)((uCtime / 60000) % 60); // ms ->s 1000 // s -> min 60
       czasPracyMin = (czasPracyMin + 1) % 60;
-      if (!czasPracyMin) {
+      if (!czasPracyMin) { 
         //      czasPracyGodz = (int)(uCtime / 3600000) % 24; //ms ->s 1000 //s->min 60 // min ->godz 60
         czasPracyGodz =(czasPracyGodz+1)%24;
         if (!czasPracyGodz) {
@@ -194,15 +201,20 @@ void loop() {
     moc = VBat * IBat;
     //    Serial.print("moc: ");
     //    Serial.println(moc);
+    czas = millis();
+    if(czas<previousCzas){
+      previousCzas=0;
+    }
 
-    czas = millis() - czas;
+    previousCzas = czas-previousCzas;
     //    Serial.print("czas: ");
     //    Serial.println(czas);
-    energia += ((moc * czas) / 3600000000); //3600 - sek na h, 1000 bo kilo(waty), 1000 ms to s
-    czas = millis();
+    energia += ((moc * previousCzas) / 3600000000); //3600 - sek na h, 1000 bo kilo(waty), 1000 ms to s
+    previousCzas = czas;
     //    Serial.print("energia: ");
     //    Serial.println(energia,8);
     //    Serial.println(czasPracySec);
+
 
     timer();
     
