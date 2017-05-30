@@ -139,7 +139,7 @@ void timer ()
 //  Serial.println(uCtime);
   if (previous!=uCtime) {
     previous = uCtime;
-    alert(); //
+
     czasPracySec = (czasPracySec + 1) % 60;
     if (!czasPracySec) {
       alert();
@@ -176,7 +176,6 @@ void alert(){
   else{
     val=0;
   }
-  energia = val;
   analogWrite(alertPin, val);
 }
 
