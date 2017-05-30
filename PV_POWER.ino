@@ -139,7 +139,7 @@ void timer ()
 //  Serial.println(uCtime);
   if (previous!=uCtime) {
     previous = uCtime;
-    
+    alert(); //
     czasPracySec = (czasPracySec + 1) % 60;
     if (!czasPracySec) {
       alert();
@@ -167,10 +167,17 @@ void timer ()
 
 //if voltage is too low -> uC gives signals!
 void alert(){
-  if(VBat<switchVoltage){
+  if(VBat<minVoltage){
+      val=255;
+    }
+  else if(VBat<switchVoltage){
     val = (abs(VBat - switchVoltage)/(switchVoltage-minVoltage))*255;
-    analogWrite(alertPin,val);
   }
+  else{
+    val=0;
+  }
+  energia = val;
+  analogWrite(alertPin, val);
 }
 
 void loop() {
